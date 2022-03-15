@@ -1,0 +1,248 @@
+import G6 from '@antv/g6';
+
+/**
+ * by Shiwu
+ */
+
+const data = {
+  nodes: [
+    {
+      id: 'eGL',
+      label: 'eGL',
+      // the attributes for drawing donut
+      donutAttrs: {
+        'user': 0,
+        'source_outbound': 1,
+        'source_inbound': 0,
+        'process': 0,
+      },
+    },
+    {
+      id: 'ribs', 
+      label: 'ribs',
+      donutAttrs: {
+        'user': 0,
+        'source_outbound': 1,
+        'source_inbound': 0,
+        'process': 0,
+      },
+    },
+    {
+      id: 'tlm 1',
+      label: 'tlm 1',
+      donutAttrs: {
+        'user': 0,
+        'source_outbound': 0,
+        'source_inbound': 1,
+        'process': 0,
+      },
+    },
+    {
+      id: 'Tathagat',
+      label: 'Tathagat',
+      donutAttrs: {
+        'user': 1,
+        'source_outbound': 0,
+        'source_inbound': 0,
+        'process': 0,
+      },
+    },
+    {
+      id: 'yash',
+      label: 'yash',
+      donutAttrs: {
+        'user': 1,
+        'source_outbound': 0,
+        'source_inbound': 0,
+        'process': 0,
+      },
+    },
+    {
+      id: 'Test 123',
+      label: 'Test 123',
+      donutAttrs: {
+        'user': 0,
+        'source_outbound': 0,
+        'source_inbound': 0,
+        'process': 1,
+      },
+    },
+  ],
+  edges: [
+
+
+    {source: 'Tathagat', target: 'Test 123', size: 5, rel: 'UP' },
+    {source: 'eGL', target: 'Test 123', size: 5, rel: 'DP'},
+    {source: 'ribs', target: 'Test 123', size: 5, rel: 'DP'},
+    {source: 'Test 123', target: 'tlm 1', size: 5, rel: 'PD'},
+  ]
+};
+
+
+console.log(data)
+const colors = {
+  'user': '#21abcd',
+  'source_outbound': '#F08BB4',
+  'source_inbound': '#ddaa61',
+  'process': '#ddaa61',
+}
+data.edges.forEach(edge=> {
+  if (edge.rel === "UP") 
+    {edge.label = `user works on process`}
+  else if (edge.rel === "DP") 
+    {edge.label = `process consumes data `}
+  else
+    {edge.label = `data set produced`}
+    
+})
+
+data.nodes.forEach(node => {
+  node.donutColorMap = colors;
+  node.size = 0;
+  Object.keys(node.donutAttrs).forEach(key => {
+    node.size += node.donutAttrs[key];
+  })
+  node.size = 50
+})
+
+
+const legendData = {
+  nodes: [{
+    id: 'data',
+    label: 'data',
+    order: 0,
+    style: {
+      fill: '#61DDAA',
+    }
+  }, {
+    id: 'outcome',
+    label: 'Outcome',
+    order: 2,
+    style: {
+      fill: '#F08BB4',
+    }
+  }, {
+    id: 'unknown',
+    label: 'Unknown',
+    order: 2,
+    style: {
+      fill: '#65789B',
+    }
+  }]
+}
+const legend = new G6.Legend({
+  data: legendData,
+  align: 'center',
+  layout: 'horizontal', // vertical
+  position: 'bottom-left',
+  vertiSep: 12,
+  horiSep: 24,
+  offsetY: -24,
+  padding: [4, 16, 8, 16],
+  containerStyle: {
+    fill: '#ccc',
+    lineWidth: 1
+  },
+  title: ' ',
+  titleConfig: {
+    offsetY: -8,
+  },
+});
+
+
+const width = document.getElementById('container').scrollWidth;
+const height = document.getElementById('container').scrollHeight || 500;
+const graph = new G6.Graph({
+  container: 'container',
+  width,
+  height,
+  // translate the graph to align the canvas's center, support by v3.5.1
+  fitCenter: true,
+  plugins: [legend],
+  modes: {
+    default: ['drag-canvas', 'drag-node'],
+    lassoSelect: [
+      {
+        type: 'zoom-canvas',
+        enableOptimize: true,
+        optimizeZoom: 0.01,
+      },
+      {
+        type: 'lasso-select',
+        selectedState: 'focus',
+        trigger: 'drag',
+      },
+    ],
+  },
+  layout: {
+    type: 'radial',
+    focusNode: 'li',
+    linkDistance: 200,
+    unitRadius: 200
+  },
+  defaultEdge: {
+    style: {
+      endArrow: true
+    },
+    labelCfg: {
+      autoRotate: true,
+      style: {
+        stroke: "#fff",
+        lineWidth: 5
+      }
+    }
+  },
+  defaultNode: {
+    type: 'donut',
+    style: {
+      lineWidth: 0,
+    },
+    labelCfg: {
+      position: 'bottom',
+    },
+  },
+});
+
+graph.data(data);
+graph.render();
+const clearFocusEdgeState = (graph) => {
+  const focusEdges = graph.findAllByState('edge', 'selected');
+  focusEdges.forEach((fedge) => {
+    graph.setItemState(fedge, 'selected', false);
+  });
+};
+const clearFocusNodeState = (graph) => {
+  const focusNodes = graph.findAllByState('node', 'selected');
+  focusNodes.forEach((fnode) => {
+    graph.setItemState(fnode, 'selected', false); // false
+  });
+};
+graph.on('node:mouseenter', (evt) => {
+  const { item } = evt;
+  graph.setItemState(item, 'active', true);
+});
+
+graph.on('node:mouseleave', (evt) => {
+  const { item } = evt;
+  graph.setItemState(item, 'active', false);
+});
+
+graph.on('node:click', (evt) => {
+  clearFocusEdgeState(graph);
+  clearFocusNodeState(graph);
+  const { item } = evt;
+  
+  const relatedEdges = item.getEdges();
+      relatedEdges.forEach((edge) => {
+        graph.setItemState(edge, 'selected', true);
+        console.log(edge)
+      });
+  graph.setItemState(item, 'selected', true);
+  const group = item.get('group')
+  console.log(group)
+});
+graph.on('canvas:click', (evt) => {
+  graph.getNodes().forEach((node) => {
+    graph.clearItemStates(node);
+  });
+});
