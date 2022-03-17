@@ -1,15 +1,28 @@
 import G6 from '@antv/g6';
 
 const ICON_MAP = {
-  a: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*0HC-SawWYUoAAAAAAAAAAABkARQnAQ',
-  b: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*sxK0RJ1UhNkAAAAAAAAAAABkARQnAQ',
+  a: './user.png',
+  b: './big-data.png',
+  c: './process.png'
 };
 
 G6.registerNode(
   'card-node',
   {
     drawShape: function drawShape(cfg, group) {
-      const color = cfg.error ? '#F4664A' : '#30BF78';
+      //const color = cfg.error ? '#F4664A' : '#30BF78';
+      var color
+      switch (cfg.error)
+      {
+       case 'data':
+         color ='#F4664A';
+         break;
+       case 'process':
+         color ='#30BF78';
+         break;
+         case 'user':
+           color ='#5F95FF';
+          break;}
       const r = 2;
       const shape = group.addShape('rect', {
         attrs: {
@@ -19,6 +32,7 @@ G6.registerNode(
           height: 80,
           stroke: color,
           radius: r,
+          fill: '#e5e5e5',
         },
         name: 'main-box',
         draggable: true,
@@ -29,7 +43,7 @@ G6.registerNode(
           x: 0,
           y: 0,
           width: 300,
-          height: 20,
+          height: 30,
           fill: color,
           radius: [r, r, 0, 0],
         },
@@ -55,36 +69,20 @@ G6.registerNode(
         attrs: {
           textBaseline: 'top',
           y: 2,
-          x: 24,
+          x: 40,
           lineHeight: 20,
           text: cfg.title,
-          fill: '#fff',
+          fill: '#000000',
         },
         name: 'title',
       });
-
-      if (cfg.nodeLevel > 0) {
-        group.addShape('marker', {
-          attrs: {
-            x: 184,
-            y: 30,
-            r: 6,
-            cursor: 'pointer',
-            symbol: cfg.collapse ? G6.Marker.expand : G6.Marker.collapse,
-            stroke: '#666',
-            lineWidth: 1,
-          },
-          name: 'collapse-icon',
-        });
-      }
-
       // The content list
       cfg.panels.forEach((item, index) => {
         // name text
         group.addShape('text', {
           attrs: {
             textBaseline: 'top',
-            y: 25,
+            y: 35,
             x: 24 + index * 60,
             lineHeight: 20,
             text: item.title,
@@ -97,7 +95,7 @@ G6.registerNode(
         group.addShape('text', {
           attrs: {
             textBaseline: 'top',
-            y: 42,
+            y: 60 ,
             x: 24 + index * 60,
             lineHeight: 20,
             text: item.value,
@@ -114,29 +112,31 @@ G6.registerNode(
 
 const container = document.getElementById('container');
 const width = container.scrollWidth;
-const height = container.scrollHeight || 500;
+const height = container.scrollHeight || 950;
 const graph = new G6.Graph({
   container: 'container',
   width,
   height,
+  animate: true,
   // translate the graph to align the canvas's center, support by v3.5.1
   fitCenter: true,
   modes: {
-    default: ['drag-canvas', 'drag-node'],
+    default: ['drag-canvas', 'drag-node','zoom-canvas'],
   },
   layout: {
     type: 'mds',
     linkDistance: 500,
   },
   defaultEdge: {
+    type: 'circle-running',
     style: {
       endArrow: true
     },
     labelCfg: {
       autoRotate: true,
       style: {
-        stroke: "#fff",
-        lineWidth: 5
+        lineWidth: 2,
+        stroke: '#bae7ff',
       }
     }
   },
@@ -150,7 +150,7 @@ const data = {
   nodes: [
     {
       title: 'node1',
-      error: true,
+      error: 'user',
       nodeType: 'a',
       id: 'node1',
       nodeLevel: 2,
@@ -163,7 +163,7 @@ const data = {
     },
     {
       title: 'node2',
-      error: false,
+      error: 'data',
       nodeType: 'b',
       id: 'node2',
       nodeLevel: 0,
@@ -176,8 +176,8 @@ const data = {
     },
     {
       title: 'node3',
-      error: false,
-      nodeType: 'a',
+      error: 'process',
+      nodeType: 'c',
       id: 'node3',
       nodeLevel: 3,
       panels: [
@@ -189,10 +189,62 @@ const data = {
 
     },
   ],
-  edges:[{source: 'node1' ,target: 'node2',size: 10},
-  {source: 'node2' ,target: 'node3', size: 10},
-  {source: 'node3' ,target: 'node1', size: 10}]
+  edges:[{source: 'node1' ,target: 'node2',size: 2},
+  {source: 'node2' ,target: 'node3', size: 2},
+  {source: 'node3' ,target: 'node1', size: 2}]
 };
+
+
+
+  // setInterval(() => {
+  //   data.nodes.forEach((node) => {
+  //     node.x += Math.random() * 50 - 25;
+  //     node.y += Math.random() * 50 - 25;
+  //   });
+  //   graph.changeData(data);
+  // }, 600);
+
+  G6.registerEdge(
+    'circle-running',
+    {
+      afterDraw(cfg, group) {
+        // get the first shape in the group, it is the edge's path here=
+        const shape = group.get('children')[0];
+        // the start position of the edge's path
+        const startPoint = shape.getPoint(0);
+  
+        // add red circle shape
+        const circle = group.addShape('circle', {
+          attrs: {
+            x: startPoint.x,
+            y: startPoint.y,
+            fill: '#1890ff',
+            r: 3,
+          },
+          name: 'circle-shape',
+        });
+  
+        // animation for the red circle
+        circle.animate(
+          (ratio) => {
+            // the operations in each frame. Ratio ranges from 0 to 1 indicating the prograss of the animation. Returns the modified configurations
+            // get the position on the edge according to the ratio
+            const tmpPoint = shape.getPoint(ratio);
+            // returns the modified configurations here, x and y here
+            return {
+              x: tmpPoint.x,
+              y: tmpPoint.y,
+            };
+          },
+          {
+            repeat: true, // Whether executes the animation repeatly
+            duration: 6000, // the duration for executing once
+          },
+        );
+      },
+    },
+    'cubic', // extend the built-in edge 'cubic'
+  );
 
 graph.data(data);
 graph.render();
@@ -204,14 +256,45 @@ if (typeof window !== 'undefined')
     graph.changeSize(container.scrollWidth, container.scrollHeight);
   };
 
-
-graph.on('wheelzoom', (e) => {
-    e.stopPropagation();
-    // className g6-component-tooltip by default
-    const tooltips = Array.from(document.getElementsByClassName('g6-component-tooltip'));
-    tooltips.forEach((tooltip) => {
-      if (tooltip && tooltip.style) {
-        tooltip.style.transform = `scale(${graph.getZoom()})`;
-      }
+  const clearFocusEdgeState = (graph) => {
+    const focusEdges = graph.findAllByState('edge', 'selected');
+    focusEdges.forEach((fedge) => {
+      graph.setItemState(fedge, 'selected', false);
+    });
+  };
+  const clearFocusNodeState = (graph) => {
+    const focusNodes = graph.findAllByState('node', 'selected');
+    focusNodes.forEach((fnode) => {
+      graph.setItemState(fnode, 'selected', false); // false
+    });
+  };
+  graph.on('node:mouseenter', (evt) => {
+    const { item } = evt;
+    graph.setItemState(item, 'active', true);
+  });
+  
+  graph.on('node:mouseleave', (evt) => {
+    const { item } = evt;
+    graph.setItemState(item, 'active', false);
+  });
+  
+  graph.on('node:click', (evt) => {
+    clearFocusEdgeState(graph);
+    clearFocusNodeState(graph);
+    const { item } = evt;
+    
+    const relatedEdges = item.getEdges();
+        relatedEdges.forEach((edge) => {
+          graph.setItemState(edge, 'selected', true);
+          console.log(edge)
+        });
+    graph.setItemState(item, 'selected', true);
+    const group = item.get('group')
+    console.log(group)
+  });
+  graph.on('canvas:click', (evt) => {
+    graph.getNodes().forEach((node) => {
+      graph.clearItemStates(node);
     });
   });
+  
