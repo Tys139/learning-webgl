@@ -1,0 +1,54 @@
+import pandas as pd
+
+def transform_dataframe(df):
+    """
+    Transform the dataframe to create Division/Class combinations
+    """
+    result_rows = []
+    
+    for _, row in df.iterrows():
+        coverage = row['coverage']
+        division_sic = row['Division/SIC']
+        class_col = row['Class']
+        
+        # Split Division/SIC by '/'
+        division_part, sic_part = division_sic.split('/')
+        
+        # Split divisions and classes by ';' (handle single values)
+        divisions = division_part.split(';') if ';' in division_part else [division_part]
+        classes = class_col.split(';') if ';' in class_col else [class_col]
+        
+        # Create combinations
+        combinations = []
+        for div in divisions:
+            for cls in classes:
+                combinations.append(f"{div}/{cls}")
+        
+        # Join combinations with ';'
+        division_class = ';'.join(combinations)
+        
+        result_rows.append({
+            'coverage': coverage,
+            'Division/Class': division_class
+        })
+    
+    return pd.DataFrame(result_rows)
+
+# Example usage with your data
+data = {
+    'coverage': ['abc', 'zyc', 'iou', 'pou'],
+    'Division/SIC': ['1/3289', '1;2;3/9879', '1/987', '1;2/878'],
+    'Class': ['1;2;3', '1;2', '1', '1']
+}
+
+df = pd.DataFrame(data)
+print("Original DataFrame:")
+print(df)
+print("\nTransformed DataFrame:")
+result_df = transform_dataframe(df)
+print(result_df)
+
+# If you want to see the exact format as in your example
+print("\nFormatted output:")
+for _, row in result_df.iterrows():
+    print(f"{row['coverage']}, {row['Division/Class']}")
