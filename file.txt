@@ -1,5 +1,16 @@
 import pandas as pd
 
+def split_by_delimiter(text):
+    """
+    Split text by either ';' or ',' delimiter
+    """
+    if ';' in text:
+        return text.split(';')
+    elif ',' in text:
+        return text.split(',')
+    else:
+        return [text]
+
 def transform_dataframe(df):
     """
     Transform the dataframe to create Division/Class combinations
@@ -14,15 +25,15 @@ def transform_dataframe(df):
         # Split Division/SIC by '/'
         division_part, sic_part = division_sic.split('/')
         
-        # Split divisions and classes by ';' (handle single values)
-        divisions = division_part.split(';') if ';' in division_part else [division_part]
-        classes = class_col.split(';') if ';' in class_col else [class_col]
+        # Split divisions and classes by ';' or ',' (handle single values)
+        divisions = split_by_delimiter(division_part)
+        classes = split_by_delimiter(class_col)
         
         # Create combinations
         combinations = []
         for div in divisions:
             for cls in classes:
-                combinations.append(f"{div}/{cls}")
+                combinations.append(f"{div.strip()}/{cls.strip()}")
         
         # Join combinations with ';'
         division_class = ';'.join(combinations)
@@ -34,11 +45,11 @@ def transform_dataframe(df):
     
     return pd.DataFrame(result_rows)
 
-# Example usage with your data
+# Example usage with your data (including comma delimiters)
 data = {
     'coverage': ['abc', 'zyc', 'iou', 'pou'],
-    'Division/SIC': ['1/3289', '1;2;3/9879', '1/987', '1;2/878'],
-    'Class': ['1;2;3', '1;2', '1', '1']
+    'Division/SIC': ['1/3289', '1;2;3/9879', '1/987', '1,2/878'],
+    'Class': ['1;2;3', '1,2', '1', '1']
 }
 
 df = pd.DataFrame(data)
